@@ -1,7 +1,9 @@
+from asyncio import events
 import PySimpleGUI as sg
 import configparser
 import requests
 import pandas as pd
+import datetime
 
 def calc(preco_invoice, frete_usd, custo_real):
     config = configparser.ConfigParser(allow_no_value=True)
@@ -29,7 +31,7 @@ def calc(preco_invoice, frete_usd, custo_real):
     vbrl = (vprod_brl + vfrete_brl)
     
 
-    tax_import = float(vbrl * (percent_import/100))
+    tax_import = round(float(vbrl * (percent_import/100)),2)
     tax_iof = round(vbrl * (percent_iof/100),2)
 
     tax_icms = round(((vbrl + tax_import)/(1-(percent_icms/100))) * (percent_icms/100),2)
@@ -47,34 +49,29 @@ resultado_array=[]
 
 sg.theme('DarkBlue8')    # Keep things interesting for your users
 
+# ------ Menu Definition ------ #      
+menu_def = [['File', ['Open', 'Save', 'Exit'  ]],]
+
 headings =['TAX IMPORT', 'ICMS', 'IOF','Total Imposto', 'Preco final', 'Custo total']
 
-layout_1 = [
+layout = [
+          [sg.Menu(menu_def, )],
           [sg.Text('PRECO REAL (USD)')],
           [sg.Input(key='-VALOR_REAL-')],
           [sg.Text('PRECO INVOICE (USD)')],      
           [sg.Input(key='-PROD_USD-')],
           [sg.Text('Frete (USD)')],
-          [sg.Input(key='-FRETE_USD-')],     
+          [sg.Input(key='-FRETE_USD-')],
+          [sg.Text('CARREGUE O ARQUIVO')], 
+          [sg.Input(key = '-XLSX-'), sg.FileBrowse('FileBrowse')],     
           [sg.Table(values=resultado_array, headings = headings, auto_size_columns=True,
                     display_row_numbers=True,
                     justification='center',
                     key='-TABLE-',
-                    row_height=20,)] ,       
-          [sg.Button('CALC'), sg.Button('Clear'), sg.Button('Reset'), sg.Exit()]
-          ]
+                    row_height=20,)],       
+          [sg.Button('CALCULAR'), sg.Button('Clear', enable_events= True), sg.Button('Reset'), sg.Button('Exportar XLSX'), sg.Exit()]
+          ]      
 
-layout_2 = [
-    [sg.Input(key = '-XLSX-'), sg.FileBrowse('FileBrowse')],
-    [sg.Table(values=resultado_array, headings = headings, auto_size_columns=True,
-                    display_row_numbers=True,
-                    justification='center',
-                    key='-TABLE_XLSX-',
-                    row_height=20,)] ,
-    [sg.Button('Calcular'), sg.Button('Clear'), sg.Button('Reset'), sg.Exit()]
-]      
-
-layout = [[sg.Column(layout_1, element_justification = 'c'), sg.Column(layout_2, element_justification = 'c', vertical_alignment = 't')]]
 window = sg.Window('Calculadora importação', layout)      
 
 while True: 
@@ -82,9 +79,9 @@ while True:
     
     if event == sg.WIN_CLOSED or event == 'Exit':
         break   # The Event Loop
-    real, invoice, frete = values['-VALOR_REAL-'], values['-PROD_USD-'], values['-FRETE_USD-']
+    real, invoice, frete, arq = values['-VALOR_REAL-'], values['-PROD_USD-'], values['-FRETE_USD-'], values['-XLSX-']
     
-    if real and invoice and frete:
+    if real and invoice and frete or event == "-XLSX-":
         prod_usd = float(values['-PROD_USD-'])
         frete_usd = float(values['-FRETE_USD-'])
         v_real_produto = float(values['-VALOR_REAL-'])
@@ -92,21 +89,14 @@ while True:
     else:
         pass
     
-    if event == 'CALC':
+    if event == 'CALCULAR' and len(arq) <= 0:
+        arq = None
+        window['Clear'].update(visible=True)
         resultado_array.append(resultado)        
         window['-TABLE-'].update(values=resultado_array)
     
-    if event == 'Clear':
-        window['-TABLE-'].Update('')
-        if len(resultado_array)<=1:
-            del(resultado_array[0])
-        else:
-            resultado_array.pop()
-    if event == 'Reset':
-        window['-TABLE-'].Update('')
-        resultado_array.clear()
-    
-    if event == 'Calcular':
+    elif len(arq) > 0 :
+        window['Clear'].update(visible=False)
         patch_xlsx = values['-XLSX-']
         xlsx = pd.read_excel(patch_xlsx) # abre o arquivo xlsx
         frame = pd.DataFrame(xlsx)
@@ -126,12 +116,26 @@ while True:
         for (a, b, c) in zip(invoice_array, frete_array, real_array):    
             resultado = calc(a,b,c)
             xlsx_array.append(resultado)
-        window['-TABLE_XLSX-'].update(values=xlsx_array)
-        
-            
-    
-        
 
+        
+        window['-TABLE-'].update(values=xlsx_array)
+        
+    
+    if event == 'Clear' and arq == '':
+        window['-TABLE-'].Update('')
+        if len(resultado_array)<=1:
+            del(resultado_array[0])
+        else:
+            resultado_array.pop()
+    if event == 'Reset':
+        window['-TABLE-'].Update('')
+        resultado_array.clear() 
+    
+    if event == 'Exportar XLSX':
+        xlsx_frame = pd.DataFrame(xlsx_array, columns=headings)
+        hoje = datetime.datetime.now()
+        str_hoje =  hoje.strftime("%Y_%m_%d %H_%M_%S")
+        xlsx_frame.to_excel(f'{str_hoje}.xlsx')
 
 window.close()
 
