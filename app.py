@@ -68,6 +68,7 @@ layout = [
                     display_row_numbers=True,
                     justification='center',
                     key='-TABLE-',
+                    enable_events=True,
                     row_height=20,)],       
           [sg.Button('CALCULAR'), sg.Button('Clear', enable_events= True), sg.Button('Reset'), sg.Button('Exportar XLSX'), sg.Exit()]
           ]      
@@ -75,6 +76,7 @@ layout = [
 window = sg.Window('Calculadora importação', layout)      
 
 while True: 
+    xlsx_array =[]
     event, values = window.read()
     
     if event == sg.WIN_CLOSED or event == 'Exit':
@@ -103,7 +105,7 @@ while True:
         invoice_array = []
         frete_array = []
         real_array = []
-        xlsx_array =[]
+        
         for i in frame['USD'].dropna():
             invoice_array.append(i)
         
@@ -132,10 +134,11 @@ while True:
         resultado_array.clear() 
     
     if event == 'Exportar XLSX':
-        xlsx_frame = pd.DataFrame(xlsx_array, columns=headings)
+        xlsx_frame = pd.DataFrame(resultado_array, columns=headings)
         hoje = datetime.datetime.now()
         str_hoje =  hoje.strftime("%Y_%m_%d %H_%M_%S")
         xlsx_frame.to_excel(f'{str_hoje}.xlsx')
+    
 
 window.close()
 
