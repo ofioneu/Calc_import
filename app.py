@@ -4,17 +4,20 @@ import configparser
 import requests
 import pandas as pd
 import datetime
+import os
 
 def calc(preco_invoice, frete_usd, custo_real):
     config = configparser.ConfigParser(allow_no_value=True)
     config.read('config.ini')
-    api_usdbrl =  config['API_USD_BRL']['usd_brl'] 
+    api_usdbrl =  config['API_USD_BRL']['usd_brl']
+    print(api_usdbrl) 
     
     custo_real=float(custo_real)
     
     response = requests.get(api_usdbrl)
     response_json = response.json()
-    moeda_brl = float(response_json['USDBRL']['ask'])
+    print(response_json)
+    moeda_brl = float(response_json['USD']['ask'])
     #moeda_brl = 5.30
     
     
@@ -44,10 +47,13 @@ def calc(preco_invoice, frete_usd, custo_real):
     
     return [tax_import, tax_icms, tax_iof, v_total_tributos, v_total_compra, total_produto]
 
+# root = os.path.dirname(__file__)
+# icon_image = os.path.join(root, 'icon.ico')
+
 resultado_array=[]
 
 
-sg.theme('DarkBlue8')    # Keep things interesting for your users
+sg.theme('Reddit')    # Keep things interesting for your users
 
 # ------ Menu Definition ------ #      
 menu_def = [['File', ['Open', 'Save', 'Exit'  ]],]
@@ -73,7 +79,7 @@ layout = [
           [sg.Button('CALCULAR'), sg.Button('Clear', enable_events= True), sg.Button('Reset'), sg.Button('Exportar XLSX'), sg.Exit()]
           ]      
 
-window = sg.Window('Calculadora importação', layout)      
+window = sg.Window('Calculadora importação', icon='icon.ico').layout(layout)     
 
 while True: 
     xlsx_array =[]
@@ -91,36 +97,39 @@ while True:
     else:
         pass
     
-    if event == 'CALCULAR' and len(arq) <= 0:
-        arq = None
+    if event == 'CALCULAR' and len(arq) <= 0 and len(resultado) > 0:
+        # arq = None
         window['Clear'].update(visible=True)
         resultado_array.append(resultado)        
         window['-TABLE-'].update(values=resultado_array)
-    
-    elif len(arq) > 0 :
-        window['Clear'].update(visible=False)
+    # else:
+    #     sg.popup_error(f'Error!\n Inserir dados! \n Valor real, invoice e frete são obrigatórios!')
+        
+    if len(arq) > 0 :
+        window['Clear'].update(visible=True)
         patch_xlsx = values['-XLSX-']
         xlsx = pd.read_excel(patch_xlsx) # abre o arquivo xlsx
         frame = pd.DataFrame(xlsx)
         invoice_array = []
         frete_array = []
         real_array = []
-        
+            
         for i in frame['USD'].dropna():
             invoice_array.append(i)
-        
+            
         for i in frame['FRETE'].dropna():
             frete_array.append(i)
-        
+            
         for i in frame['PRECO REAL'].dropna():
             real_array.append(i)
-        
+            
         for (a, b, c) in zip(invoice_array, frete_array, real_array):    
             resultado = calc(a,b,c)
             xlsx_array.append(resultado)
 
-        
+            
         window['-TABLE-'].update(values=xlsx_array)
+    
         
     
     if event == 'Clear' and arq == '':
@@ -138,6 +147,7 @@ while True:
         hoje = datetime.datetime.now()
         str_hoje =  hoje.strftime("%Y_%m_%d %H_%M_%S")
         xlsx_frame.to_excel(f'{str_hoje}.xlsx')
+        sg.SystemTray.notify('NOTIFICAÇÃO!', 'XLSX EXPORTADO COM SUCESSO', location=(500,300))
     
 
 window.close()
