@@ -9,7 +9,7 @@ import os
 def calc(preco_invoice, frete_usd, custo_real):
     config = configparser.ConfigParser(allow_no_value=True)
     config.read('config.ini')
-    api_usdbrl =  config['API_USD_BRL']['usd_brl']
+    api_usdbrl =  config['USD']['ask']
     print(api_usdbrl) 
     
     custo_real=float(custo_real)
@@ -17,8 +17,8 @@ def calc(preco_invoice, frete_usd, custo_real):
     response = requests.get(api_usdbrl)
     response_json = response.json()
     print(response_json)
-    moeda_brl = float(response_json['USD']['ask'])
-    #moeda_brl = 5.30
+    moeda_brl = float(response_json['USDBRL']['ask'])
+
     
     
     tax_alibaba = float(config['TAX']['tax_alibaba'])

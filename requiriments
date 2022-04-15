@@ -1,17 +1,16 @@
 certifi==2021.10.8
-charset-normalizer==2.0.11
-cx-Freeze==6.10
-cx-Logging==3.0
+charset-normalizer==2.0.12
+cx-Freeze @ file:///C:/Users/Fabio/Downloads/Calc_import/cx_Freeze-6.10-cp310-cp310-win_amd64.whl
+cx-Logging @ file:///C:/Users/Fabio/Downloads/Calc_import/cx_Logging-3.0-cp310-cp310-win_amd64.whl
 et-xmlfile==1.1.0
 idna==3.3
-numpy==1.22.2
+numpy==1.22.3
 openpyxl==3.0.9
-pandas==1.4.0
+pandas==1.4.2
 PySimpleGUI==4.56.0
 python-dateutil==2.8.2
 pytz==2021.3
 requests==2.27.1
 six==1.16.0
-urllib3==1.26.8
+urllib3==1.26.9
 xlrd==2.0.1
-XlsxWriter==3.0.2
